@@ -60,7 +60,7 @@ except:
 dictionary=corpora.Dictionary(documents)
 corpus=[dictionary.doc2bow(doc) for doc in documents]#generate matrix
 tf_idf=models.TfidfModel(corpus)
-
+# comment
 corpus_tfidf=tf_idf[corpus]
  
 #training
