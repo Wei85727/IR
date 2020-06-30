@@ -11,7 +11,7 @@ from gensim import models,corpora,similarities
 from gensim.models import LsiModel
 from gensim.models.coherencemodel import CoherenceModel
 
-# query answer
+# query_answer
 import csv
 with open('queries/ans_train.csv', newline='') as csvfile:
     rows = csv.reader(csvfile)
@@ -21,7 +21,7 @@ with open('queries/ans_train.csv', newline='') as csvfile:
 
 # document list
 documents = []
-with open("ans/ans_20/ans_1.0_0.0_0.0/train_model/file-list",encoding="utf8") as file:
+with open("ans/ans_30/ans_1.0_0.0_0.0/train_model/file-list",encoding="utf8") as file:
     while True:
         line = file.readline()
         if not line:
@@ -30,7 +30,7 @@ with open("ans/ans_20/ans_1.0_0.0_0.0/train_model/file-list",encoding="utf8") as
 
 # vocab list
 vocab = []
-with open("ans/ans_20/ans_1.0_0.0_0.0/train_model/vocab.all",encoding="utf8") as file:
+with open("ans/ans_30/ans_1.0_0.0_0.0/train_model/vocab.all",encoding="utf8") as file:
     while True:
         line = file.readline()
         if not line:
@@ -38,7 +38,7 @@ with open("ans/ans_20/ans_1.0_0.0_0.0/train_model/vocab.all",encoding="utf8") as
         vocab.append(line.replace("\n", ""))                     
 
 # term count
-with open("ans/ans_20/ans_1.0_0.0_0.0/train_model/inverted-file") as file:
+with open("ans/ans_30/ans_1.0_0.0_0.0/train_model/inverted-file") as file:
     term_count = 0
     while True:
         line = file.readline()
@@ -52,7 +52,7 @@ print(term_count)
 
 # doucument-term matrix
 M = np.zeros([232,term_count])
-with open("ans/ans_20/ans_1.0_0.0_0.0/train_model/inverted-file") as file:
+with open("ans/ans_30/ans_1.0_0.0_0.0/train_model/inverted-file") as file:
     dictionary = {}
     dict_for_query = []
     a = 0
@@ -66,7 +66,7 @@ with open("ans/ans_20/ans_1.0_0.0_0.0/train_model/inverted-file") as file:
         for i in range(int(count)):
             line = file.readline()
             docId, df, tfidf = line.split(" ")
-            M[int(docId)][a] = float(tfidf)
+            M[int(docId)][a] = tfidf
         a += 1             
 
 # 將matrix轉為套件input型式
@@ -104,7 +104,8 @@ topics=lsi.show_topics(num_words=10,log=0)
 for tpc in topics:
     print(tpc)
 
-with open('LSI_term_20_topic_top10term.csv', 'w', newline='') as csvfile:
+# each topic top10_term
+with open('LSI_term_30_topic_top10term.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow(['topic_id', 'term'])
     a = 0
@@ -157,17 +158,19 @@ def Main(number):
     cosine_similarities_test = cosine_similarity_matrix[vector_lsi_test]
     # print("Cosine Similarities of Test Document LSI Vectors to Training Documents LSI Vectors:",cosine_similarities_test)
 
-    # result
+    # result topic50 relevant doc
     # most_similar_document_test = documents[np.argmax(cosine_similarities_test)]
     top50 = heapq.nlargest(50, range(len(cosine_similarities_test)), cosine_similarities_test.take)
     most_similar_document_test = []
     for i in range(50):
         most_similar_document_test.append(documents[top50[i]])
     
+    # ranking list字串轉換 對應query_answer
     ans = []
     for i in range(len(most_similar_document_test)):
         ans.append(most_similar_document_test[i][16:].lower())
     
+    # 計算MAP score
     MAP = 0
     a = 1
     b = 0
@@ -180,6 +183,7 @@ def Main(number):
             a += 1
     MAP_final = MAP/len(list_ans[number+1])
 
+    #  輸出ranking list
     ranking_res = ""
     for i in range(len(most_similar_document_test)):
         ranking_res += most_similar_document_test[i][16:]+" " 
@@ -188,10 +192,11 @@ def Main(number):
     return MAP_final, ranking_res    
 
 if __name__  == "__main__":
-    with open('LSI_term_20_rankinglist.csv', 'w', newline='') as csvfile:
+    
+    with open('LSI_term_30_rankinglist.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['query_id', 'MAP', 'retrieved_docs'])
         for i in range(10):
             MAP, top50 = Main(i)
-            # print('Top3 Documents for Query ', i ,':\n',top50) 
+            # print('Top50 Documents for Query ', i ,':\n',top50) 
             writer.writerow([i+1, MAP, top50.lower()]) 
